@@ -8,6 +8,7 @@ from highway_env.road.road import Road, LaneIndex
 from highway_env.vehicle.objects import RoadObject, Obstacle, Landmark
 from highway_env.utils import Vector
 
+ROLES = ['npc', 'ego', 'sut']   # List of possible roles
 
 class Vehicle(RoadObject):
 
@@ -36,8 +37,11 @@ class Vehicle(RoadObject):
                  position: Vector,
                  heading: float = 0,
                  speed: float = 0,
-                 predition_type: str = 'constant_steering'):
+                 predition_type: str = 'constant_steering',
+                 role: str = 'npc'):
         super().__init__(road, position, heading, speed)
+        assert role in ROLES, f"role {role} is not valid ({ROLES})"
+        self.role = role
         self.prediction_type = predition_type
         self.action = {'steering': 0, 'acceleration': 0}
         self.crashed = False
@@ -200,6 +204,7 @@ class Vehicle(RoadObject):
 
     def to_dict(self, origin_vehicle: "Vehicle" = None, observe_intentions: bool = True) -> dict:
         d = {
+            'role': ROLES.index(self.role),
             'presence': 1,
             'x': self.position[0],
             'y': self.position[1],
@@ -223,7 +228,7 @@ class Vehicle(RoadObject):
         return d
 
     def __str__(self):
-        return "{} #{}: {}".format(self.__class__.__name__, id(self) % 1000, self.position)
+        return "{} #{} ({}): {}".format(self.__class__.__name__, id(self) % 1000, self.role, self.position)
 
     def __repr__(self):
         return self.__str__()
