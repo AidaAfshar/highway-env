@@ -14,6 +14,7 @@ if __name__ == '__main__':
     env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 
     for videos in range(10):
+        tot_rewards = 0
         done = False
         obs = env.reset()
         while not done:
@@ -24,4 +25,7 @@ if __name__ == '__main__':
             # Render
             env.render()
             print(reward)
+            tot_rewards += reward
+        print(f"tot reward: {tot_rewards}\n")
+        input()
     env.close()

@@ -21,7 +21,7 @@ class HighwayADEXEnv(AbstractEnv):
         config.update({
             "observation": {
                 "type": "Kinematics",
-                "features": ["role", "presence", "x", "y", "vx", "vy", "cos_h", "sin_h"]
+                "features": ["is_sut", "presence", "x", "y", "vx", "vy", "cos_h", "sin_h"]
             },
             "action": {
                 "type": "DiscreteMetaAction",
@@ -126,8 +126,8 @@ class HighwayADEXEnv(AbstractEnv):
         ego_reward = np.mean(rewards_per_role['ego'])   # in case controlling >1 agent
         sut_reward = rewards_per_role['sut'][0]         # the 'sut' in unique
         reward = utils.lmap(ego_reward - sut_reward,    # Rescale reward to be in [0, 1]
-                            [-1, 2],                    # min reward: ego_reward=0, sut_reward=1 -> -1
-                            [0, 1])                     # max_reward: ego_reward=1, sut_reward=1 -> 2
+                            [-1, 1],                    # min reward: ego_reward=0, sut_reward=1 -> -1
+                            [0, 1])                     # max_reward: ego_reward=1, sut_reward=0 -> +1
         return reward
 
     def _is_terminal(self) -> bool:

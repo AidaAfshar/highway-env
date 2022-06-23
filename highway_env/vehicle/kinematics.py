@@ -205,6 +205,7 @@ class Vehicle(RoadObject):
     def to_dict(self, origin_vehicle: "Vehicle" = None, observe_intentions: bool = True) -> dict:
         d = {
             'role': ROLES.index(self.role),
+            'is_sut': int(self.role == 'sut'),
             'presence': 1,
             'x': self.position[0],
             'y': self.position[1],
