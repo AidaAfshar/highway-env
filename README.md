@@ -1,3 +1,15 @@
+# Notes
+This is a forked version of `highway-env`.
+The few changes w.r.t. the original implementation are described in the following:
+1. Vehicle: see `highway_env/vehicle/kinematics.py`
+   1. it has a new attribute `role` (to identify if `npc`, `ego` or `sut`)
+   2. the dictionary returned includes 2 features `role` and `is_sut`
+2. Environment: see `highway_env/envs/highway_adex_env.py`
+   1. it changes the default configuration to have 2 controllable vehicles (ie., `ego` and `sut`)
+   2. it uses `kinematics` observation, extending it to have also the feature `is_sut` 
+   3. in the method `_create_vehicles`: it assign `ego` and `sut` roles to the spawned vehicles, all the other are by default `npc`
+
+
 # highway-env
 
 [![build](https://github.com/eleurent/highway-env/workflows/build/badge.svg)](https://github.com/eleurent/highway-env/actions?query=workflow%3Abuild)
