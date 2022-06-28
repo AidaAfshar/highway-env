@@ -28,7 +28,7 @@ class HighwayADEXEnv(AbstractEnv):
             },
             "lanes_count": 4,
             "vehicles_count": 50,
-            "controlled_vehicles": 2,  # we have 2 controlled vehicles: the 'ego' and the 'sut'
+            "controlled_vehicles": 1,
             "initial_lane_id": None,
             "duration": 40,  # [s]
             "ego_spacing": 2,
@@ -51,11 +51,8 @@ class HighwayADEXEnv(AbstractEnv):
 
     @property
     def sut_vehicle(self) -> Vehicle:
-        """Last (default) controlled vehicle."""
-        if len(self.controlled_vehicles) <= 1:
-            msg = f"try to use ego-sut vehicles but only {len(self.controlled_vehicles)} controller vehicles."
-            raise EnvironmentError(msg)
-        return self.controlled_vehicles[-1] if self.controlled_vehicles else None
+        """First (default) sut vehicle."""
+        return self.sut_vehicles[0] if self.sut_vehicles else None
 
     def _reset(self) -> None:
         self._create_road()
@@ -72,6 +69,7 @@ class HighwayADEXEnv(AbstractEnv):
         other_per_controlled = near_split(self.config["vehicles_count"], num_bins=self.config["controlled_vehicles"])
 
         self.controlled_vehicles = []
+        self.sut_vehicles = []
         for i, others in enumerate(other_per_controlled):
             vehicle = Vehicle.create_random(
                 self.road,
@@ -81,9 +79,7 @@ class HighwayADEXEnv(AbstractEnv):
             )
             # create controlled vehicle
             vehicle = self.action_type.vehicle_class(self.road, vehicle.position, vehicle.heading, vehicle.speed)
-            # choose role of controlled vehicle
-            role = 'sut' if i == len(other_per_controlled) - 1 else 'ego'   # only 1 'sut' (last)
-            vehicle.role = role
+            vehicle.role = 'ego'
 
             self.controlled_vehicles.append(vehicle)
             self.road.vehicles.append(vehicle)
@@ -92,6 +88,12 @@ class HighwayADEXEnv(AbstractEnv):
                 vehicle = other_vehicles_type.create_random(self.road, spacing=1 / self.config["vehicles_density"])
                 vehicle.randomize_behavior()
                 self.road.vehicles.append(vehicle)
+
+        # mark one random vehicle as sut
+        id_sut = np.random.choice([i for i, v in enumerate(self.road.vehicles) if v.role != 'ego' ])
+        self.road.vehicles[id_sut].role = 'sut'
+        self.sut_vehicles.append(self.road.vehicles[id_sut])
+
 
     def _reward(self, action: Action) -> float:
         """
@@ -181,7 +183,7 @@ class HighwayADEXEnvDebug(HighwayADEXEnvFast):
         cfg.update({
             "simulation_frequency": 5,
             "lanes_count": 3,
-            "vehicles_count": 1,
+            "vehicles_count": 2,
             "duration": 30,  # [s]
             "ego_spacing": 1.5,
         })

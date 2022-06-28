@@ -23,6 +23,7 @@ class VehicleGraphics(object):
     PURPLE = (200, 0, 150)
     DEFAULT_COLOR = YELLOW
     EGO_COLOR = GREEN
+    SUT_COLOR = PURPLE
 
     @classmethod
     def display(cls, vehicle: Vehicle, surface: "WorldSurface",
@@ -172,12 +173,14 @@ class VehicleGraphics(object):
             color = vehicle.color
         elif vehicle.crashed:
             color = cls.RED
+        elif vehicle.role == "ego":
+            color = cls.EGO_COLOR
+        elif vehicle.role == "sut":
+            color = cls.SUT_COLOR
         elif isinstance(vehicle, LinearVehicle):
             color = cls.YELLOW
         elif isinstance(vehicle, IDMVehicle):
             color = cls.BLUE
-        elif isinstance(vehicle, MDPVehicle):
-            color = cls.EGO_COLOR
         if transparent:
             color = (color[0], color[1], color[2], 30)
         return color

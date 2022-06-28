@@ -4,10 +4,12 @@ import time
 import gym
 from gym.wrappers import RecordVideo, Monitor
 import highway_env
+from rewards import reward_register
 
 
 from stable_baselines3 import DQN
 
+from rewards.reward_wrapper import HighwayRewardWrapper
 from training.callbacks import VideoRecorderCallback
 
 TRAIN = True
@@ -15,7 +17,9 @@ TRAINING_STEPS = 5e4
 
 if __name__ == '__main__':
     # Create the environment
-    env = gym.make("highway-adex-debug-v0")
+    env = gym.make("highway-adex-fast-v0")
+    reward_fn = reward_register.make("purely_adv", dt=1/env.config["simulation_frequency"])
+    env = HighwayRewardWrapper(env, reward_fn)
     obs = env.reset()
 
     logdir = pathlib.Path(f"logs/highway_dqn_{time.time()}")
