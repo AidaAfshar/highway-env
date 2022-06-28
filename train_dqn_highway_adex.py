@@ -17,12 +17,15 @@ TRAINING_STEPS = 5e4
 
 if __name__ == '__main__':
     # Create the environment
-    env = gym.make("highway-adex-fast-v0")
-    reward_fn = reward_register.make("purely_adv", dt=1/env.config["simulation_frequency"])
+    env_name = "highway-adex-debug-v0"
+    reward_name = "purely_adv"
+
+    env = gym.make(env_name)
+    reward_fn = reward_register.make(reward_name, dt=1/env.config["simulation_frequency"])
     env = HighwayRewardWrapper(env, reward_fn)
     obs = env.reset()
 
-    logdir = pathlib.Path(f"logs/highway_dqn_{time.time()}")
+    logdir = pathlib.Path(f"logs/{env_name}/dqn_{reward_name}_{time.time()}")
     logdir.mkdir(exist_ok=True, parents=True)
 
     # Create the model
