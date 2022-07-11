@@ -2,7 +2,7 @@ import pathlib
 import time
 
 import gym
-from gym.wrappers import RecordVideo, Monitor
+from gym.wrappers import RecordVideo, Monitor, FlattenObservation
 import highway_env
 from rewards import reward_register
 
@@ -13,16 +13,17 @@ from rewards.reward_wrapper import HighwayRewardWrapper
 from training.callbacks import VideoRecorderCallback
 
 TRAIN = True
-TRAINING_STEPS = 5e4
+TRAINING_STEPS = 5e5
 
 if __name__ == '__main__':
     # Create the environment
     env_name = "highway-adex-debug-v0"
-    reward_name = "purely_adv"
+    reward_name = "hprs_cutin"
 
     env = gym.make(env_name)
-    reward_fn = reward_register.make(reward_name, dt=1/env.config["simulation_frequency"])
+    reward_fn = reward_register.make(reward_name, env=env)
     env = HighwayRewardWrapper(env, reward_fn)
+    env = FlattenObservation(env)
     obs = env.reset()
 
     logdir = pathlib.Path(f"logs/{env_name}/dqn_{reward_name}_{time.time()}")
