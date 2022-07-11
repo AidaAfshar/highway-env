@@ -44,7 +44,6 @@ class ObservationType(object):
 
 
 class GrayscaleObservation(ObservationType):
-
     """
     An observation class that collects directly what the simulator renders.
 
@@ -70,7 +69,7 @@ class GrayscaleObservation(ObservationType):
                  **kwargs) -> None:
         super().__init__(env)
         self.observation_shape = observation_shape
-        self.shape = (stack_size, ) + self.observation_shape
+        self.shape = (stack_size,) + self.observation_shape
         self.weights = weights
         self.obs = np.zeros(self.shape)
 
@@ -117,13 +116,13 @@ class TimeToCollisionObservation(ObservationType):
         if not self.env.road:
             return np.zeros((3, 3, int(self.horizon * self.env.config["policy_frequency"])))
         grid = compute_ttc_grid(self.env, vehicle=self.observer_vehicle,
-                                time_quantization=1/self.env.config["policy_frequency"], horizon=self.horizon)
+                                time_quantization=1 / self.env.config["policy_frequency"], horizon=self.horizon)
         padding = np.ones(np.shape(grid))
         padded_grid = np.concatenate([padding, grid, padding], axis=1)
         obs_lanes = 3
         l0 = grid.shape[1] + self.observer_vehicle.lane_index[2] - obs_lanes // 2
         lf = grid.shape[1] + self.observer_vehicle.lane_index[2] + obs_lanes // 2
-        clamped_grid = padded_grid[:, l0:lf+1, :]
+        clamped_grid = padded_grid[:, l0:lf + 1, :]
         repeats = np.ones(clamped_grid.shape[0])
         repeats[np.array([0, -1])] += clamped_grid.shape[0]
         padded_grid = np.repeat(clamped_grid, repeats.astype(int), axis=0)
@@ -135,7 +134,6 @@ class TimeToCollisionObservation(ObservationType):
 
 
 class KinematicObservation(ObservationType):
-
     """Observe the kinematics of nearby vehicles."""
 
     FEATURES: List[str] = ['presence', 'x', 'y', 'vx', 'vy']
@@ -188,8 +186,8 @@ class KinematicObservation(ObservationType):
             self.features_range = {
                 "x": [-5.0 * Vehicle.MAX_SPEED, 5.0 * Vehicle.MAX_SPEED],
                 "y": [-AbstractLane.DEFAULT_WIDTH * len(side_lanes), AbstractLane.DEFAULT_WIDTH * len(side_lanes)],
-                "vx": [-2*Vehicle.MAX_SPEED, 2*Vehicle.MAX_SPEED],
-                "vy": [-2*Vehicle.MAX_SPEED, 2*Vehicle.MAX_SPEED]
+                "vx": [-2 * Vehicle.MAX_SPEED, 2 * Vehicle.MAX_SPEED],
+                "vy": [-2 * Vehicle.MAX_SPEED, 2 * Vehicle.MAX_SPEED]
             }
         for feature, f_range in self.features_range.items():
             if feature in df:
@@ -233,11 +231,10 @@ class KinematicObservation(ObservationType):
 
 
 class OccupancyGridObservation(ObservationType):
-
     """Observe an occupancy grid of nearby vehicles."""
 
     FEATURES: List[str] = ['presence', 'vx', 'vy', 'on_road']
-    GRID_SIZE: List[List[float]] = [[-5.5*5, 5.5*5], [-5.5*5, 5.5*5]]
+    GRID_SIZE: List[List[float]] = [[-5.5 * 5, 5.5 * 5], [-5.5 * 5, 5.5 * 5]]
     GRID_STEP: List[int] = [5, 5]
 
     def __init__(self,
@@ -289,8 +286,8 @@ class OccupancyGridObservation(ObservationType):
         """
         if not self.features_range:
             self.features_range = {
-                "vx": [-2*Vehicle.MAX_SPEED, 2*Vehicle.MAX_SPEED],
-                "vy": [-2*Vehicle.MAX_SPEED, 2*Vehicle.MAX_SPEED]
+                "vx": [-2 * Vehicle.MAX_SPEED, 2 * Vehicle.MAX_SPEED],
+                "vy": [-2 * Vehicle.MAX_SPEED, 2 * Vehicle.MAX_SPEED]
             }
         for feature, f_range in self.features_range.items():
             if feature in df:
@@ -355,7 +352,7 @@ class OccupancyGridObservation(ObservationType):
         if self.align_to_vehicle_axes:
             c, s = np.cos(self.observer_vehicle.heading), np.sin(self.observer_vehicle.heading)
             position = np.array([[c, s], [-s, c]]) @ position
-        return int(np.floor((position[0] - self.grid_size[0, 0]) / self.grid_step[0])),\
+        return int(np.floor((position[0] - self.grid_size[0, 0]) / self.grid_step[0])), \
                int(np.floor((position[1] - self.grid_size[1, 0]) / self.grid_step[1]))
 
     def index_to_pos(self, index: Tuple[int, int]) -> np.ndarray:
@@ -389,8 +386,8 @@ class OccupancyGridObservation(ObservationType):
                 for lane in road.network.graph[_from][_to]:
                     origin, _ = lane.local_coordinates(self.observer_vehicle.position)
                     waypoints = np.arange(origin - lane_perception_distance,
-                                            origin + lane_perception_distance,
-                                            lane_waypoints_spacing).clip(0, lane.length)
+                                          origin + lane_perception_distance,
+                                          lane_waypoints_spacing).clip(0, lane.length)
                     for waypoint in waypoints:
                         cell = self.pos_to_index(lane.position(waypoint, 0))
                         if 0 <= cell[1] < self.grid.shape[-2] and 0 <= cell[0] < self.grid.shape[-1]:
@@ -431,10 +428,10 @@ class KinematicsGoalObservation(KinematicObservation):
     def observe(self) -> Dict[str, np.ndarray]:
         if not self.observer_vehicle:
             return {
-            "observation": np.zeros((len(self.features),)),
-            "achieved_goal": np.zeros((len(self.features),)),
-            "desired_goal": np.zeros((len(self.features),))
-        }
+                "observation": np.zeros((len(self.features),)),
+                "achieved_goal": np.zeros((len(self.features),)),
+                "desired_goal": np.zeros((len(self.features),))
+            }
 
         obs = np.ravel(pd.DataFrame.from_records([self.observer_vehicle.to_dict()])[self.features])
         goal = np.ravel(pd.DataFrame.from_records([self.env.goal.to_dict()])[self.features])
@@ -503,7 +500,6 @@ class TupleObservation(ObservationType):
 
 
 class ExitObservation(KinematicObservation):
-
     """Specific to exit_env, observe the distance to the next exit lane as part of a KinematicObservation."""
 
     def observe(self) -> np.ndarray:
@@ -594,7 +590,7 @@ class LidarObservation(ObservationType):
             min_angle, max_angle = min(angles), max(angles)
             start, end = self.angle_to_index(min_angle), self.angle_to_index(max_angle)
             if start < end:
-                indexes = np.arange(start, end+1)
+                indexes = np.arange(start, end + 1)
             else:
                 indexes = np.hstack([np.arange(start, self.cells), np.arange(0, end + 1)])
 
@@ -609,7 +605,7 @@ class LidarObservation(ObservationType):
         return self.grid
 
     def position_to_angle(self, position: np.ndarray, origin: np.ndarray) -> float:
-        return np.arctan2(position[1] - origin[1], position[0] - origin[0]) + self.angle/2
+        return np.arctan2(position[1] - origin[1], position[0] - origin[0]) + self.angle / 2
 
     def position_to_index(self, position: np.ndarray, origin: np.ndarray) -> int:
         return self.angle_to_index(self.position_to_angle(position, origin))
@@ -619,6 +615,37 @@ class LidarObservation(ObservationType):
 
     def index_to_direction(self, index: int) -> np.ndarray:
         return np.array([np.cos(index * self.angle), np.sin(index * self.angle)])
+
+
+class EgoSUTObservation(ObservationType):
+
+    def __init__(self,
+                 env: 'HighwayADEXEnv',
+                 **kwargs: dict
+                 ):
+        super().__init__(env)
+        self._kinematics = KinematicObservation(env, **kwargs)
+
+    def space(self) -> spaces.Space:
+        return spaces.Dict(
+            {
+                "kinematics": self._kinematics.space(),
+                "d_lon": spaces.Box(-np.inf, +np.inf, shape=(1,)),
+                "d_lat": spaces.Box(-np.inf, +np.inf, shape=(1,)),
+                "nonsut_collision": spaces.Box(-1, +1, shape=(1,)),
+            }
+        )
+
+    def observe(self):
+        ego_sut_crash, _, _ = self.env.vehicle._is_colliding(self.env.sut_vehicle, 1 / self.env.config["simulation_frequency"])
+        nonsut_collision = 1.0 if self.env.vehicle.crashed and not ego_sut_crash else -1
+        obs = {
+            "kinematics": self._kinematics.observe(),
+            "d_lon": np.array([self.env.vehicle.position[0] - self.env.sut_vehicle.position[0]]).astype(np.float32),
+            "d_lat": np.array([self.env.vehicle.position[1] - self.env.sut_vehicle.position[1]]).astype(np.float32),
+            "nonsut_collision": np.array([nonsut_collision]).astype(np.float32),
+        }
+        return obs
 
 
 def observation_factory(env: 'AbstractEnv', config: dict) -> ObservationType:
@@ -642,5 +669,7 @@ def observation_factory(env: 'AbstractEnv', config: dict) -> ObservationType:
         return LidarObservation(env, **config)
     elif config["type"] == "ExitObservation":
         return ExitObservation(env, **config)
+    elif config["type"] == "EgoSutObservation":
+        return EgoSUTObservation(env, **config)
     else:
         raise ValueError("Unknown observation type")

@@ -1,6 +1,7 @@
 from typing import Callable, Any
 
-from rewards.reward_fns import PurelyAdversarialRewardFunction, DrivingRewardPlusAdversarial
+from rewards.reward_fns import PurelyAdversarialRewardFunction, DrivingRewardPlusAdversarial, \
+    BreakLongitudinalAndLateralDistance
 from rewards.reward_wrapper import RewardFunction
 
 
@@ -19,4 +20,5 @@ class RewardRegistry:
 
 reward_register = RewardRegistry()
 reward_register.register("purely_adv", PurelyAdversarialRewardFunction)
-reward_register.register("egoreward_advreward", DrivingRewardPlusAdversarial)
+
+reward_register.register("hprs_cutin", BreakLongitudinalAndLateralDistance)
