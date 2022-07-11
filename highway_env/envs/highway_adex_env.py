@@ -33,12 +33,12 @@ class HighwayADEXEnv(AbstractEnv):
             "duration": 40,  # [s]
             "ego_spacing": 2,
             "vehicles_density": 1,
-            "collision_reward": -1,    # The reward received when colliding with a vehicle.
+            "collision_reward": -1,  # The reward received when colliding with a vehicle.
             "right_lane_reward": 0.1,  # The reward received when driving on the right-most lanes, linearly mapped to
-                                       # zero for other lanes.
+            # zero for other lanes.
             "high_speed_reward": 0.4,  # The reward received when driving at full speed, linearly mapped to zero for
-                                       # lower speeds according to config["reward_speed_range"].
-            "lane_change_reward": 0,   # The reward received at each lane change action.
+            # lower speeds according to config["reward_speed_range"].
+            "lane_change_reward": 0,  # The reward received at each lane change action.
             "reward_speed_range": [20, 30],
             "offroad_terminal": False
         })
@@ -90,53 +90,22 @@ class HighwayADEXEnv(AbstractEnv):
                 self.road.vehicles.append(vehicle)
 
         # mark one random vehicle as sut
-        id_sut = np.random.choice([i for i, v in enumerate(self.road.vehicles) if v.role != 'ego' ])
+        id_sut = np.random.choice([i for i, v in enumerate(self.road.vehicles) if v.role != 'ego'])
         self.road.vehicles[id_sut].role = 'sut'
         self.sut_vehicles.append(self.road.vehicles[id_sut])
 
-
     def _reward(self, action: Action) -> float:
         """
-        The reward is defined to foster driving at high speed, on the rightmost lanes, and to avoid collisions.
-        :param action: the last action performed
-        :return: the corresponding reward
+        not implemented reward
         """
-
-        # compute reward for ego and sut vehicles
-        rewards_per_role = {'ego': [], 'sut': []}
-        for vehicle in self.road.vehicles:
-            if vehicle.role == 'npc':
-                continue
-            neighbours = self.road.network.all_side_lanes(vehicle.lane_index)
-            lane = vehicle.target_lane_index[2] if isinstance(vehicle, ControlledVehicle) \
-                else vehicle.lane_index[2]
-            # Use forward speed rather than speed, see https://github.com/eleurent/highway-env/issues/268
-            forward_speed = vehicle.speed * np.cos(vehicle.heading)
-            scaled_speed = utils.lmap(forward_speed, self.config["reward_speed_range"], [0, 1])
-            reward = \
-                + self.config["collision_reward"] * vehicle.crashed \
-                + self.config["right_lane_reward"] * lane / max(len(neighbours) - 1, 1) \
-                + self.config["high_speed_reward"] * np.clip(scaled_speed, 0, 1)
-            reward = utils.lmap(reward,
-                              [self.config["collision_reward"],
-                               self.config["high_speed_reward"] + self.config["right_lane_reward"]],
-                              [0, 1])
-            reward = 0 if not vehicle.on_road else reward
-            # store (role, reward)
-            rewards_per_role[vehicle.role] += [reward]
-        # aggregate rewards
-        ego_reward = np.mean(rewards_per_role['ego'])   # in case controlling >1 agent
-        sut_reward = rewards_per_role['sut'][0]         # the 'sut' in unique
-        reward = utils.lmap(ego_reward - sut_reward,    # Rescale reward to be in [0, 1]
-                            [-1, 1],                    # min reward: ego_reward=0, sut_reward=1 -> -1
-                            [0, 1])                     # max_reward: ego_reward=1, sut_reward=0 -> +1
+        reward = 0.0
         return reward
 
     def _is_terminal(self) -> bool:
         """The episode is over if the ego vehicle crashed or the time is out."""
         return self.vehicle.crashed or \
-            self.steps >= self.config["duration"] or \
-            (self.config["offroad_terminal"] and not self.vehicle.on_road)
+               self.steps >= self.config["duration"] or \
+               (self.config["offroad_terminal"] and not self.vehicle.on_road)
 
     def _cost(self, action: int) -> float:
         """The cost signal is the occurrence of collision."""
@@ -150,6 +119,7 @@ class HighwayADEXEnvFast(HighwayADEXEnv):
         - fewer vehicles in the scene (and fewer lanes, shorter episode duration)
         - only check collision of controlled vehicles with others
     """
+
     @classmethod
     def default_config(cls) -> dict:
         cfg = super().default_config()
@@ -177,6 +147,7 @@ class HighwayADEXEnvDebug(HighwayADEXEnvFast):
         - fewer vehicles in the scene (and fewer lanes, shorter episode duration)
         - only check collision of controlled vehicles with others
     """
+
     @classmethod
     def default_config(cls) -> dict:
         cfg = super().default_config()
@@ -188,8 +159,6 @@ class HighwayADEXEnvDebug(HighwayADEXEnvFast):
             "ego_spacing": 1.5,
         })
         return cfg
-
-
 
 
 register(
