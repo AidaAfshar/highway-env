@@ -18,10 +18,10 @@ TRAINING_STEPS = 5e5
 if __name__ == '__main__':
     # Create the environment
     env_name = "highway-adex-debug-v0"
-    reward_name = "hprs_cutin"
+    reward_name = "purely_adv"
 
     env = gym.make(env_name)
-    reward_fn = reward_register.make(reward_name, env=env)
+    reward_fn = reward_register.make(reward_name, dt=1/env.config["simulation_frequency"])
     env = HighwayRewardWrapper(env, reward_fn)
     env = FlattenObservation(env)
     obs = env.reset()
