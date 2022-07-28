@@ -1,6 +1,6 @@
 from typing import Callable, Any
 
-from rewards.reward_fns import PurelyAdversarialRewardFunction
+from rewards.reward_fns import PurelyAdversarialRewardFunction, ReverseOfRelativeDistanceRewardFunction
 from rewards.reward_wrapper import RewardFunction
 
 
@@ -19,3 +19,5 @@ class RewardRegistry:
 
 reward_register = RewardRegistry()
 reward_register.register("purely_adv", PurelyAdversarialRewardFunction)
+reward_register.register("reverse_of_euclidian_distance_adv", ReverseOfRelativeDistanceRewardFunction)
+
