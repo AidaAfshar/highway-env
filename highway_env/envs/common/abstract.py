@@ -18,6 +18,7 @@ from highway_env.vehicle.kinematics import Vehicle
 
 Observation = np.ndarray
 
+
 class AbstractEnv(gym.Env):
 
     """
@@ -219,6 +220,10 @@ class AbstractEnv(gym.Env):
         reward = self._reward(action)
         terminal = self._is_terminal()
         info = self._info(obs, action)
+
+        # ADDED FOR HPRS
+        info['steps'] = self.steps
+        info['done'] = terminal
 
         return obs, reward, terminal, info
 

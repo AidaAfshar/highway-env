@@ -12,7 +12,7 @@ from rewards.reward_wrapper import HighwayRewardWrapper
 from training.callbacks import VideoRecorderCallback
 
 TRAIN = True
-TRAINING_STEPS = 140000
+TRAINING_STEPS = 100000
 
 # register new reward function, test it (update main)
 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     env = gym.make(env_name)
     reward_fn = reward_register.make(reward_name, dt=1/env.config["simulation_frequency"])
     env = HighwayRewardWrapper(env, reward_fn)
-    env = FlattenObservation(env)
+    #env = FlattenObservation(env)
     obs = env.reset()
 
 

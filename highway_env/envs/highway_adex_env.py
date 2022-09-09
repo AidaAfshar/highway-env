@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from gym.envs.registration import register
 
@@ -8,6 +10,8 @@ from highway_env.road.road import Road, RoadNetwork
 from highway_env.utils import near_split
 from highway_env.vehicle.controller import ControlledVehicle
 from highway_env.vehicle.kinematics import Vehicle
+from rewards.reward_functions.hprs import hprs_utils
+from rewards.reward_functions.hprs import constants as const
 
 
 class HighwayADEXEnv(AbstractEnv):
@@ -161,6 +165,104 @@ class HighwayADEXEnvDebug(HighwayADEXEnvFast):
         return cfg
 
 
+class HighwayADEXEnvHPRS(HighwayADEXEnvDebug):
+
+    def __init__(self) -> None:
+        super(HighwayADEXEnvHPRS, self).__init__()
+        self.target_distance = 850
+        self.dist_target_tol = 50
+        self.soft_speed_limit = const.SOFT_SPEED_LIMIT
+        self.hard_speed_limit = const.HARD_SPEED_LIMIT
+        self.time_step = 0
+
+    def violated_safe_distance(self, state, info):
+        # assuming states are absolute
+        assert len(state) > 0
+        assert len(state[0]) == 8
+        ego_state = state[0]
+        for i in range(1, len(state)):
+            vehicle_state = state[i]
+            if vehicle_state[1] == 1:  # if vehicle is present
+                d_lon = abs(vehicle_state[2] - ego_state[2])  # | x_ego - x_other |
+                d_lat = abs(vehicle_state[3] - ego_state[3])  # | y_ego - y_other |
+            else:
+                d_lon = math.inf
+                d_lat = math.inf
+            d_lon_safe = hprs_utils.safe_long_dist(ego_state, vehicle_state)
+            d_lat_safe = hprs_utils.safe_lat_dist(ego_state, vehicle_state)
+            violated = bool(d_lon < d_lon_safe and d_lat < d_lat_safe)
+            if violated:
+                return True
+        return False
+
+
+    def violated_hard_speed_limit(self, state, info):
+        assert len(state) > 0
+        assert len(state[0]) == 8
+        ego_state = state[0]
+        ego_v_lon = ego_state[4]
+        return int(ego_v_lon > info['HARD_SPEED_LIMIT'])
+
+
+    def ego_drives_faster_than_left(self, state, info):
+        assert len(state) > 0
+        assert len(state[0]) == 8
+        ego_state = state[0]
+        for i in range(1, len(state)):
+            vehicle_state = state[i]
+            if vehicle_state[1] == 1:  # if vehicle is present
+                if hprs_utils.left_lane(vehicle_state, ego_state) and hprs_utils.in_vicinity(vehicle_state, ego_state):
+                    if ego_state[4] > vehicle_state[4]:
+                        return True
+        return False
+
+
+    def reward(self, state, info):
+        """
+        Kinda-Vanilla Reward - Punishment for crash, bonus for reaching the target
+        """
+        if info['done']:
+            if self.violated_safe_distance(state, info):
+                return -1.0
+            elif self.reached_target(state, info):
+                return 1.0
+        return 0
+
+    def reached_target(self, state, info):
+        assert len(state) > 0
+        assert len(state[0]) == 8
+        ego_x = state[0][2]
+        check_goal = bool(abs(ego_x - info['target_distance']) <= info['dist_target_tol'])
+        return True if check_goal else False
+
+
+    def step(self, action: Action):
+        state, reward, done, info = super(HighwayADEXEnvHPRS, self).step(action)
+        print(state)
+        '''
+        state = {
+            "observation": obs,
+            "rss": ...,
+
+        }
+        '''
+        info['target_distance'] = self.target_distance
+        info['dist_target_tol'] = self.dist_target_tol
+        info['SOFT_SPEED_LIMIT'] = self.soft_speed_limit
+        info['HARD_SPEED_LIMIT'] = self.hard_speed_limit
+        info['time_step'] = self.time_step
+        done = done or \
+               self.reached_target(state, info) or \
+               self.violated_safe_distance(state, info) or \
+               self.violated_hard_speed_limit(state, info)
+               # self.ego_drives_faster_than_left(state, info)
+        info['done'] = done
+        reward = self.reward(state, info)
+        return state, reward, done, info
+
+
+
+
 register(
     id='highway-adex-v0',
     entry_point='highway_env.envs:HighwayADEXEnv',
@@ -175,3 +277,4 @@ register(
     id='highway-adex-debug-v0',
     entry_point='highway_env.envs:HighwayADEXEnvDebug',
 )
+
