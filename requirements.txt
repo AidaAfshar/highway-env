@@ -8,3 +8,4 @@ setuptools~=60.2.0
 pandas~=1.4.3
 scipy~=1.8.1
 matplotlib~=3.5.2
+imageio~=2.21.0

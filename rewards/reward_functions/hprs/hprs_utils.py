@@ -17,7 +17,7 @@ def safe_long_dist(v1, v2):
 
 def safe_lat_dist(v1, v2):
     if same_lane(v1, v2):
-        return 0
+        return c.LANE_WIDTH
     if left_lane(v1, v2):
         left_car = v1
         right_car = v2

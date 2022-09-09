@@ -14,6 +14,7 @@ from training.callbacks import VideoRecorderCallback
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 from wrappers import HPRSFilterObservationWrapper
+import rewards.reward_functions.hprs.constants as const
 
 TRAIN = True
 TRAINING_STEPS = 1e6
@@ -29,10 +30,10 @@ if __name__ == '__main__':
             "type": "Kinematics",
             "features": ["presence", "x", "y", "vx", "vy", "cos_h", "sin_h"],
             "features_range": {
-                "x": [0, 2000],
-                "y": [0, 50],
-                "vx": [0, 50],
-                "vy": [-10, 10]
+                "x": [0, const.X_LIMIT],
+                "y": [0, const.Y_LIMIT],
+                "vx": [0, const.VX_LIMIT],
+                "vy": [-const.VY_LIMIT, const.VY_LIMIT]
             },
             "normalize": False,
             "absolute": True,
@@ -89,29 +90,29 @@ if __name__ == '__main__':
     # Train the model
     if TRAIN:
 
-        video_cb = VideoRecorderCallback(Monitor(env, logdir / "videos"), render_freq=1e3,
-                                         n_eval_episodes=1)
-        model.learn(total_timesteps=int(TRAINING_STEPS), callback=[video_cb, checkpoint_callback],
+        # video_cb = VideoRecorderCallback(Monitor(env, logdir / "videos"), render_freq=1000,
+        #                                  n_eval_episodes=1)
+        model.learn(total_timesteps=int(TRAINING_STEPS), callback=[checkpoint_callback],
                     eval_env=env, eval_freq=10000, n_eval_episodes=10, eval_log_path=logdir)
 
         model.save(f"{logdir}/model")
         del model
 
     # Run the trained model and record video
-    model = PPO.load(f"{logdir}/model", env=env)
-    env = RecordVideo(env, video_folder=f"{logdir}/videos", episode_trigger=lambda e: True)
-    env.unwrapped.set_record_video_wrapper(env)
-    env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
-
-    for videos in range(10):
-        done = False
-        obs = env.reset()
-        while not done:
-            # Predict
-            action, _states = model.predict(obs, deterministic=True)
-            # Get reward
-            obs, reward, done, info = env.step(action)
-            # Render
-            env.render()
+    # model = PPO.load(f"{logdir}/model", env=env)
+    # env = RecordVideo(env, video_folder=f"{logdir}/videos", episode_trigger=lambda e: True)
+    # env.unwrapped.set_record_video_wrapper(env)
+    # env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
+    #
+    # for videos in range(10):
+    #     done = False
+    #     obs = env.reset()
+    #     while not done:
+    #         # Predict
+    #         action, _states = model.predict(obs, deterministic=True)
+    #         # Get reward
+    #         obs, reward, done, info = env.step(action)
+    #         # Render
+    #         env.render()
     env.close()
     

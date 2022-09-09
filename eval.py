@@ -12,7 +12,7 @@ from rewards.reward_wrapper import HighwayRewardWrapper, HPRSHighwayRewardWrappe
 from training.callbacks import VideoRecorderCallback
 from wrappers import HPRSFilterObservationWrapper
 
-LOGDIR = f"logs/highway-hprs-v0/PPO_hprs_1662668191.051967"
+LOGDIR = f"logs/hprs_sparse_comparison/highway-hprs-v0/PPO_hprs_1662753955.023573"
 
 
 if __name__ == '__main__':
@@ -51,9 +51,9 @@ if __name__ == '__main__':
 
     # Run the trained model and record video
     model = PPO.load(f"{logdir}/model", env=env)
-    env = RecordVideo(env, video_folder=f"{logdir}/videos", episode_trigger=lambda e: True)
-    env.unwrapped.set_record_video_wrapper(env)
-    #env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
+    # env = RecordVideo(env, video_folder=f"{logdir}/videos", episode_trigger=lambda e: True)
+    # env.unwrapped.set_record_video_wrapper(env)
+    # env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 
 
     for videos in range(20):

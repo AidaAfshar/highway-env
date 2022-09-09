@@ -73,7 +73,7 @@ class HighwayEnv(AbstractEnv):
         for others in other_per_controlled:
             vehicle = Vehicle.create_random(
                 self.road,
-                speed=25,
+                speed=21,
                 lane_id=self.config["initial_lane_id"],
                 spacing=self.config["ego_spacing"]
             )
@@ -165,11 +165,21 @@ class HighwayEnvHPRS(HighwayEnvFast):
         self.soft_speed_limit = const.SOFT_SPEED_LIMIT
         self.hard_speed_limit = const.HARD_SPEED_LIMIT
         self.speed_lower_bound = const.SPEED_LOWER_BOUND
+        self.x_limit = const.X_LIMIT
+        self.y_limit = const.Y_LIMIT
+        self.vx_limit = const.VX_LIMIT
+        self.vy_limit = const.VY_LIMIT
 
         self.step_count = 0
+        self.max_steps = self.config['duration']
 
         self.observation_space = gym.spaces.Dict(dict(
             observation=observation_factory(self, self.config["observation"]).space(),
+            ego_x=Box(low=0.0, high=np.inf, shape=(1,)),
+            ego_y=Box(low=0.0, high=np.inf, shape=(1,)),
+            ego_vx=Box(low=0.0, high=np.inf, shape=(1,)),
+            ego_vy=Box(low=-np.inf, high=np.inf, shape=(1,)),
+            collision=Box(low=0.0, high=np.inf, shape=(1,)),
             violated_safe_distance=Box(low=0.0, high=1.0, shape=(1,)),
             violated_hard_speed_limit=Box(low=0.0, high=1.0, shape=(1,)),
             road_progress=Box(low=0.0, high=np.inf, shape=(1,)),
@@ -205,9 +215,10 @@ class HighwayEnvHPRS(HighwayEnvFast):
                 d_lat = -float('inf')
             d_lon_safe = hprs_utils.safe_long_dist(ego_obs, vehicle_obs)
             d_lat_safe = hprs_utils.safe_lat_dist(ego_obs, vehicle_obs)
-            # print('lon: ', d_lon_safe)
-            # print('lat:', d_lat_safe)
             violated = bool(d_lon < d_lon_safe and d_lat < d_lat_safe)
+            # print('lon: ', d_lon, '     -    ', d_lon_safe)
+            # print('lat:', d_lat, '     -    ', d_lat_safe)
+            # print('----------------------------------')
             if violated:
                 return 1
         return 0
@@ -267,27 +278,38 @@ class HighwayEnvHPRS(HighwayEnvFast):
     def reward(self, obs, info):
         assert 'done' in info
         if info['done']:
-            if self.violated_safe_distance(obs, info):
+            if self.vehicle.crashed:
                 return -1.0
             elif self.reached_target(obs, info):
                 return 1.0
         return 0
 
 
-    def step(self, action: Action):
-        self.step_count += 1
-        obs, reward, done, info = super(HighwayEnvHPRS, self).step(action)
-
-        # print('v_lon: ', obs[0][3])
-        # print('avg_v_lon: ', (obs[1][3]+obs[2][3]+obs[3][3]+obs[4][3])/4)
-
+    def set_info_constants(self, info):
         info['TARGET_DISTANCE'] = self.target_distance
         info['TARGET_DISTANCE_TOL'] = self.target_distance_tol
         info['SOFT_SPEED_LIMIT'] = self.soft_speed_limit
         info['HARD_SPEED_LIMIT'] = self.hard_speed_limit
         info['SPEED_LOWER_BOUND'] = self.speed_lower_bound
+        info['X_LIMIT'] = self.x_limit
+        info['Y_LIMIT'] = self.y_limit
+        info['VX_LIMIT'] = self.vx_limit
+        info['VY_LIMIT'] = self.vy_limit
+        info['MAX_STEPS'] = self.max_steps
+        return info
+
+    def step(self, action: Action):
+        self.step_count += 1
+        obs, reward, done, info = super(HighwayEnvHPRS, self).step(action)
+
+        # print(action)
+        # print('v_lon: ', obs[0][3])
+        # print('avg_v_lon: ', (obs[1][3]+obs[2][3]+obs[3][3]+obs[4][3])/4)
+        # print('------------------------')
+        info = self.set_info_constants(info)
 
         reached_target = self.reached_target(obs, info)
+        collision = float(self.vehicle.crashed)
         violated_safe_distance = self.violated_safe_distance(obs, info)
         violated_hard_speed_limit = self.violated_hard_speed_limit(obs, info)
         ego_road_progress = self.get_ego_road_progress(obs, info)
@@ -295,9 +317,13 @@ class HighwayEnvHPRS(HighwayEnvFast):
         max_velocity_difference_to_left = self.get_max_velocity_difference_to_left(obs, info)
 
 
-
         state = {
             "observation": obs,
+            "ego_x": obs[0][1],
+            "ego_y": obs[0][2],
+            "ego_vx": obs[0][3],
+            "ego_vy": obs[0][4],
+            "collision": collision,
             "violated_safe_distance": violated_safe_distance,
             "violated_hard_speed_limit": violated_hard_speed_limit,
             "road_progress": ego_road_progress,
@@ -306,17 +332,14 @@ class HighwayEnvHPRS(HighwayEnvFast):
             "step_count": self.step_count
         }
 
-        # if done:
-        #     print('end of duration')
-
-
         done = done or reached_target or violated_safe_distance or violated_hard_speed_limit
 
         info['done'] = done
 
 
-
         # if info['done']:
+        #     print(self.step_count)
+        #     print(collision)
         #     print(state['violated_safe_distance'])
         #     print(state['violated_hard_speed_limit'])
         #     print(state['road_progress'])
@@ -324,8 +347,6 @@ class HighwayEnvHPRS(HighwayEnvFast):
         #     print('_________________')
 
         reward = self.reward(obs, info)
-
-
         return state, reward, done, info
 
 
@@ -333,9 +354,13 @@ class HighwayEnvHPRS(HighwayEnvFast):
         obs = super(HighwayEnvHPRS, self).reset()
 
         self.step_count = 0
-
         state = {
             "observation": obs,
+            "ego_x": 0,
+            "ego_y": 0,
+            "ego_vx": 0,
+            "ego_vy": 0,
+            "collision": 0,
             "violated_safe_distance": 0,
             "violated_hard_speed_limit": 0,
             "road_progress": 0,
