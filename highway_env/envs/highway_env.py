@@ -216,10 +216,10 @@ class HighwayEnvHPRS(HighwayEnvFast):
             d_lon_safe = hprs_utils.safe_long_dist(ego_obs, vehicle_obs)
             d_lat_safe = hprs_utils.safe_lat_dist(ego_obs, vehicle_obs)
             violated = bool(d_lon < d_lon_safe and d_lat < d_lat_safe)
-            # print('lon: ', d_lon, '     -    ', d_lon_safe)
-            # print('lat:', d_lat, '     -    ', d_lat_safe)
-            # print('----------------------------------')
             if violated:
+                # print('lon: ', d_lon, '     -    ', d_lon_safe)
+                # print('lat:', d_lat, '     -    ', d_lat_safe)
+                # print('----------------------------------')
                 return 1
         return 0
 
@@ -337,14 +337,14 @@ class HighwayEnvHPRS(HighwayEnvFast):
         info['done'] = done
 
 
-        # if info['done']:
-        #     print(self.step_count)
-        #     print(collision)
-        #     print(state['violated_safe_distance'])
-        #     print(state['violated_hard_speed_limit'])
-        #     print(state['road_progress'])
-        #     print(reached_target)
-        #     print('_________________')
+        if info['done']:
+            print(self.step_count)
+            print(collision)
+            print(state['violated_safe_distance'])
+            print(state['violated_hard_speed_limit'])
+            print(state['road_progress'])
+            print(reached_target)
+            print('_________________')
 
         reward = self.reward(obs, info)
         return state, reward, done, info
@@ -480,12 +480,12 @@ class HighwayEnvBaseline(HighwayEnvFast):
 
 
 
-        # if info['done']:
-        #     print(state['violated_safe_distance'])
-        #     print(state['violated_hard_speed_limit'])
-        #     print(state['road_progress'])
-        #     print(reached_target)
-        #     print('_________________')
+        if info['done']:
+            print(state['violated_safe_distance'])
+            print(state['violated_hard_speed_limit'])
+            print(state['road_progress'])
+            print(reached_target)
+            print('_________________')
 
         reward = self.reward(obs, info)
 
