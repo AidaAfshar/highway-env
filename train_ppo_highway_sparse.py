@@ -38,7 +38,7 @@ if __name__ == '__main__':
             "absolute": True,
         },
         "vehicles_count": 20,
-        "lanes_count": 3,
+        "lanes_count": 4,
     }
     env.configure(config)
     env.reset()
