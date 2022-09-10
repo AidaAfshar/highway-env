@@ -22,7 +22,7 @@ TRAINING_STEPS = 5e5
 if __name__ == '__main__':
     # Create the environment
     env_name = 'highway-hprs-v0'  # duration : 40
-    algo = 'PPO'
+    algo = 'DQN'
     env = gym.make(env_name)
     config = {
         "observation": {

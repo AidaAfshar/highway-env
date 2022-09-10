@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # Create the environment
     env_name = 'highway-hprs-v0'     # duration : 40
     reward_name = 'hprs'
-    algo = 'PPO'
+    algo = 'DQN'
     env = gym.make(env_name)
     config = {
         "observation": {
