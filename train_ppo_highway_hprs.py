@@ -17,7 +17,7 @@ from wrappers import HPRSFilterObservationWrapper
 import rewards.reward_functions.hprs.constants as const
 
 TRAIN = True
-TRAINING_STEPS = 1e6
+TRAINING_STEPS = 5e5
 
 if __name__ == '__main__':
     # Create the environment
@@ -39,7 +39,7 @@ if __name__ == '__main__':
             "absolute": True,
         },
         "vehicles_count": 20,
-        "lanes_count": 4,
+        "lanes_count": const.LANES_COUNT,
     }
     env.configure(config)
     env.reset()

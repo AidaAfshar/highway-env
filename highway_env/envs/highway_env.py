@@ -1,3 +1,5 @@
+import statistics
+
 import gym
 import numpy as np
 from gym.envs.registration import register
@@ -73,7 +75,7 @@ class HighwayEnv(AbstractEnv):
         for others in other_per_controlled:
             vehicle = Vehicle.create_random(
                 self.road,
-                speed=21,
+                # speed=21,
                 lane_id=self.config["initial_lane_id"],
                 spacing=self.config["ego_spacing"]
             )
@@ -172,6 +174,7 @@ class HighwayEnvHPRS(HighwayEnvFast):
 
         self.step_count = 0
         self.max_steps = self.config['duration']
+        self.ego_avg_speed = []
 
         self.observation_space = gym.spaces.Dict(dict(
             observation=observation_factory(self, self.config["observation"]).space(),
@@ -193,7 +196,7 @@ class HighwayEnvHPRS(HighwayEnvFast):
         cfg = super().default_config()
         cfg.update({
             "simulation_frequency": 5,
-            "lanes_count": 3,
+            "lanes_count": const.LANES_COUNT,
             "vehicles_count": 20,
             "duration": 40,  # [s]
             "ego_spacing": 1.5,
@@ -203,6 +206,8 @@ class HighwayEnvHPRS(HighwayEnvFast):
 
     def violated_safe_distance(self, obs, info):
         # assuming states are absolute
+        if self.vehicle.crashed:
+            return 1
         assert (len(obs) > 0) and (len(obs[0]) == 7)
         ego_obs = obs[0]
         for i in range(1, len(obs)):
@@ -302,6 +307,8 @@ class HighwayEnvHPRS(HighwayEnvFast):
         self.step_count += 1
         obs, reward, done, info = super(HighwayEnvHPRS, self).step(action)
 
+        self.ego_avg_speed.append(obs[0][3])
+
         # print(action)
         # print('v_lon: ', obs[0][3])
         # print('avg_v_lon: ', (obs[1][3]+obs[2][3]+obs[3][3]+obs[4][3])/4)
@@ -342,6 +349,7 @@ class HighwayEnvHPRS(HighwayEnvFast):
             print(collision)
             print(state['violated_safe_distance'])
             print(state['violated_hard_speed_limit'])
+            print(statistics.mean(self.ego_avg_speed))
             print(state['road_progress'])
             print(reached_target)
             print('_________________')
@@ -354,6 +362,7 @@ class HighwayEnvHPRS(HighwayEnvFast):
         obs = super(HighwayEnvHPRS, self).reset()
 
         self.step_count = 0
+        self.ego_avg_speed = []
         state = {
             "observation": obs,
             "ego_x": 0,
