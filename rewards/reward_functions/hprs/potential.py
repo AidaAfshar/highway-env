@@ -55,6 +55,11 @@ def comfort_no_faster_than_left_potential(state, info):
     return 1 - clip_and_norm(state['max_velocity_difference_to_left'], 0, info['HARD_SPEED_LIMIT'])
 
 
+def comfort_reach_target_sooner_potential(state, info):
+    assert 'step_count' in state and 'MAX_STEPS' in info
+    return 1 - clip_and_norm(state['step_count'], 0, info['MAX_STEPS'])
+
+
 def simple_base_reward(state, info):
     assert 'distance_to_target' in state
     assert 'TARGET_DISTANCE' in info and 'TARGET_DISTANCE_TOL' in info
@@ -82,7 +87,8 @@ class HighwayHierarchicalShapingReward(HPRSRewardFunction):
         c1 = comfort_soft_speed_limit_potential(state, info)
         c2 = comfort_no_faster_than_left_potential(state, info)
         c3 = comfort_speed_lower_bound_potential(state, info)
-        comfort_reward = c1 + c2 + c3
+        c4 = comfort_reach_target_sooner_potential(state, info)
+        comfort_reward = c1 + c2 + c3 + c4
         # hierarchical weights
         safety_weight = safety_RSS_potential(state, info) * safety_hard_speed_limit_potential(state, info)
         target_weight = target_reach_destination_potential(state, info)

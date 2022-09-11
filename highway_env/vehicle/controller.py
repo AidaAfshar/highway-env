@@ -204,8 +204,8 @@ class MDPVehicle(ControlledVehicle):
 
     """A controlled vehicle with a specified discrete range of allowed target speeds."""
     # DEFAULT_TARGET_SPEEDS = np.linspace(20, 30, 3)
-    # DEFAULT_TARGET_SPEEDS = np.linspace(18, 26, 5)
-    DEFAULT_TARGET_SPEEDS = np.linspace(19, 26, 8)
+    DEFAULT_TARGET_SPEEDS = np.linspace(18, 26, 3)
+    # DEFAULT_TARGET_SPEEDS = np.linspace(19, 25, 8)
 
     def __init__(self,
                  road: Road,
@@ -232,7 +232,6 @@ class MDPVehicle(ControlledVehicle):
         self.target_speeds = np.array(target_speeds) if target_speeds is not None else self.DEFAULT_TARGET_SPEEDS
         self.speed_index = self.speed_to_index(self.target_speed)
         self.target_speed = self.index_to_speed(self.speed_index)
-
 
     def act(self, action: Union[dict, str] = None) -> None:
         """

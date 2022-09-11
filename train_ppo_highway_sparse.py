@@ -22,7 +22,7 @@ TRAINING_STEPS = 5e5
 if __name__ == '__main__':
     # Create the environment
     env_name = 'highway-hprs-v0'  # duration : 40
-    algo = 'DQN'
+    algo = 'PPO'
     env = gym.make(env_name)
     config = {
         "observation": {
@@ -77,7 +77,7 @@ if __name__ == '__main__':
                     policy_kwargs=dict(net_arch=[256, 256]),
                     learning_rate=5e-4,
                     batch_size=32,
-                    gamma=0.99,
+                    gamma=0.8,
                     verbose=1,
                     tensorboard_log=logdir)
 
